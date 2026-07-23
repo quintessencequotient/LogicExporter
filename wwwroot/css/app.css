@@ -1,0 +1,435 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+:root {
+    color-scheme: light;
+    --page: #f7f7f4;
+    --surface: #ffffff;
+    --ink: #22211f;
+    --muted: #66615b;
+    --line: #d9d6cf;
+    --field: #fbfbf9;
+    --accent: #2f6f73;
+    --accent-strong: #25575b;
+    --pending: #7a5a12;
+    --invalid: #9b2f2f;
+    --valid: #276c4f;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.5;
+}
+
+button,
+select,
+textarea {
+    font: inherit;
+}
+
+button,
+select {
+    min-height: 2.4rem;
+}
+
+button {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    padding: 0.45rem 0.75rem;
+}
+
+button:hover:not(:disabled),
+button:focus-visible,
+.help-trigger:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+    border-color: var(--accent);
+    outline: 2px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    outline-offset: 2px;
+}
+
+button:disabled {
+    color: #9b9690;
+    cursor: not-allowed;
+}
+
+a {
+    color: var(--accent-strong);
+}
+
+.logic-shell {
+    width: min(960px, calc(100% - 2rem));
+    margin: 0 auto;
+    padding: 2rem 0;
+}
+
+.app-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: clamp(2rem, 3vw, 3rem);
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.app-header p {
+    margin: 0.25rem 0 0;
+    color: var(--muted);
+}
+
+.help-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+}
+
+.help-trigger {
+    display: inline-grid;
+    place-items: center;
+    width: 1.6rem;
+    min-height: 1.6rem;
+    height: 1.6rem;
+    border: 1px solid var(--accent-strong);
+    border-radius: 50%;
+    background: var(--surface);
+    padding: 0;
+    color: var(--accent-strong);
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.help-tooltip:hover .help-trigger,
+.help-trigger:focus-visible {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.help-content {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 0.45rem);
+    left: 0;
+    width: min(34rem, calc(100vw - 2rem));
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    box-shadow: 0 0.5rem 1.25rem rgba(34, 33, 31, 0.12);
+    color: var(--ink);
+    font-size: 0.86rem;
+    line-height: 1.35;
+    opacity: 0;
+    padding: 0.65rem 0.75rem;
+    pointer-events: none;
+    transform: translateY(-0.2rem);
+    transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.help-tooltip:hover .help-content,
+.help-tooltip:focus-within .help-content {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.help-title,
+.help-line {
+    display: block;
+}
+
+.help-title {
+    color: var(--accent-strong);
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
+.help-line + .help-line {
+    margin-top: 0.35rem;
+}
+
+.help-content code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 0.82rem;
+}
+
+.system-picker,
+.editor-stack,
+.output-stack {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.system-picker {
+    min-width: min(22rem, 100%);
+}
+
+.system-picker span,
+.editor-stack label,
+.output-stack label {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.system-picker select {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--ink);
+    padding: 0.45rem 0.65rem;
+}
+
+.formula-editor,
+.latex-output {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--field);
+    color: var(--ink);
+    padding: 0.9rem;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 1.25rem;
+    letter-spacing: 0;
+}
+
+.formula-editor {
+    min-height: 12rem;
+}
+
+.latex-output {
+    min-height: 5rem;
+    font-size: 1rem;
+}
+
+.symbol-palette {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, max-content));
+    gap: 0.85rem 1rem;
+    margin: 1rem 0 1.25rem;
+}
+
+.symbol-category {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.symbol-category-label {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.symbol-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: 0.35rem;
+}
+
+.symbol-button {
+    width: 2.55rem;
+    height: 2.4rem;
+    padding: 0;
+    font-size: 1.15rem;
+}
+
+.indexed-symbol {
+    position: relative;
+    display: grid;
+    width: 2.55rem;
+    grid-template-rows: 2.4rem 1rem;
+}
+
+.indexed-symbol .symbol-button {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.index-toggle {
+    width: 2.55rem;
+    min-height: 1rem;
+    height: 1rem;
+    border-top: 0;
+    border-radius: 0 0 6px 6px;
+    background: #f1f0eb;
+    color: var(--muted);
+    font-size: 0.72rem;
+    line-height: 1;
+    padding: 0;
+}
+
+.index-menu {
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 3rem);
+    gap: 0.25rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    box-shadow: 0 0.5rem 1.25rem rgba(34, 33, 31, 0.12);
+    padding: 0.35rem;
+}
+
+.index-option {
+    min-height: 2rem;
+    padding: 0;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 0.82rem;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.primary-action {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.primary-action:hover,
+.primary-action:focus-visible {
+    background: var(--accent-strong);
+}
+
+.validation-result {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.75rem;
+    align-items: baseline;
+    border-left: 4px solid var(--line);
+    background: var(--surface);
+    margin: 0 0 1rem;
+    padding: 0.7rem 0.85rem;
+}
+
+.validation-result.is-valid {
+    border-left-color: var(--valid);
+}
+
+.validation-result.is-invalid {
+    border-left-color: var(--invalid);
+}
+
+.validation-result.is-pending {
+    border-left-color: var(--pending);
+}
+
+.copy-status {
+    margin: 0 0 1rem;
+    color: var(--accent-strong);
+}
+
+.contribute-link {
+    display: flex;
+    gap: 0.4rem;
+    margin: 1rem 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.not-found {
+    max-width: 42rem;
+}
+
+#blazor-error-ui {
+    background: #fff7bf;
+    border-top: 1px solid #d8bd57;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.14);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    padding: 0.65rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+.loading-progress {
+    display: block;
+    height: 8rem;
+    inset: 20vh 0 auto 0;
+    margin: 0 auto;
+    position: absolute;
+    width: 8rem;
+}
+
+.loading-progress circle {
+    fill: none;
+    stroke: #ddd9cf;
+    stroke-width: 0.6rem;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+
+.loading-progress circle:last-child {
+    stroke: var(--accent);
+    stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+    transition: stroke-dasharray 0.05s ease-in-out;
+}
+
+.loading-progress-text {
+    font-weight: 600;
+    inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
+    position: absolute;
+    text-align: center;
+}
+
+.loading-progress-text::after {
+    content: var(--blazor-load-percentage-text, "Loading");
+}
+
+@media (max-width: 700px) {
+    .logic-shell {
+        width: min(100% - 1rem, 960px);
+        padding: 1rem 0;
+    }
+
+    .app-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .formula-editor {
+        min-height: 10rem;
+    }
+}

@@ -1,0 +1,312 @@
+@page "/"
+@inject IJSRuntime Js
+
+<PageTitle>LogicExporter</PageTitle>
+
+<main class="logic-shell">
+    <header class="app-header">
+        <div>
+            <h1>Logic Exporter</h1>
+            <p>
+                Symbolic logic notation pad
+                <span class="help-tooltip">
+                    <span class="help-trigger"
+                          tabindex="0"
+                          aria-describedby="tool-help"
+                          aria-label="How to use Logic Exporter">
+                        ?
+                    </span>
+                    <span id="tool-help" class="help-content" role="tooltip">
+                        <span class="help-title">Accepted syntax</span>
+                        <span class="help-line">Use the system selector first. Type directly or insert palette symbols, then validate and copy Unicode or LaTeX.</span>
+                        <span class="help-line">Connectives, strongest to weakest: <code>¬</code>, <code>∧</code>, <code>∨</code>, <code>→</code>, <code>↔</code>. Aliases: <code>~</code> or <code>!</code>, <code>&amp;</code>, <code>|</code>, <code>-&gt;</code>, <code>&lt;-&gt;</code>.</span>
+                        <span class="help-line">Propositional mode accepts uppercase sentence letters such as <code>P</code>, <code>Q</code>, <code>R</code>, and indexed forms like <code>P_0</code>.</span>
+                        <span class="help-line">FOL and FOML use variables <code>x</code>, <code>y</code>, <code>z</code> plus <code>_0</code> through <code>_5</code>; constants <code>a</code> through <code>e</code>; predicates <code>P</code>, <code>Q</code>, <code>R</code>, <code>F</code>, <code>G</code>, <code>H</code> plus indexed forms.</span>
+                        <span class="help-line">Predicates must use parentheses: <code>P(x)</code>, <code>Q(y)</code>, <code>R(x,y)</code>. This parser does not currently accept adjacency forms like <code>Px</code> or <code>Rxy</code>.</span>
+                        <span class="help-line">Quantifiers are prefix operators: <code>∀xF(x)</code>, <code>∃y(F(y) ∧ G(y))</code>. Aliases: <code>forall</code>, <code>exists</code>. This parser does not currently accept quantifier blocks like <code>(∀x)</code>.</span>
+                        <span class="help-line">Identity formulas look like <code>x = a</code> or <code>x ≠ y</code>; <code>!=</code> becomes <code>≠</code>. Function symbols are not supported yet.</span>
+                        <span class="help-line">FOML adds <code>□</code> and <code>◇</code>, with aliases <code>[]</code> and <code>&lt;&gt;</code>. Modal formulas still need FOL atoms, so <code>□P(x)</code> is valid but <code>□P</code> is not.</span>
+                    </span>
+                </span>
+            </p>
+        </div>
+        <label class="system-picker" for="logic-system">
+            <span>System</span>
+            <select id="logic-system" @bind="SelectedSystem">
+                <option value="@LogicSystem.Propositional">Propositional logic</option>
+                <option value="@LogicSystem.FirstOrderWithIdentity">First-order logic with identity</option>
+                <option value="@LogicSystem.Modal">FOML with identity</option>
+            </select>
+        </label>
+    </header>
+
+    <section class="editor-stack" aria-label="Formula editor">
+        <label for="formula">Formula</label>
+        <textarea id="formula"
+                  class="formula-editor"
+                  @ref="_formulaEditor"
+                  value="@_formula"
+                  @oninput="UpdateFormula"
+                  spellcheck="false"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"></textarea>
+    </section>
+
+    <section class="symbol-palette" aria-label="Symbol palette">
+        @foreach (var category in CurrentSymbolCategories)
+        {
+            <div class="symbol-category" role="group" aria-label="@category.Label">
+                <span class="symbol-category-label">@category.Label</span>
+                <div class="symbol-group">
+                @foreach (var symbol in category.Symbols)
+                {
+                    @if (category.HasIndexedVariants)
+                    {
+                        <div class="indexed-symbol">
+                            <button type="button"
+                                    class="symbol-button"
+                                    title="Insert @symbol"
+                                    @onclick="() => InsertSymbol(symbol)">
+                                @symbol
+                            </button>
+                            <button type="button"
+                                    class="index-toggle"
+                                    aria-label="Show indexed variants for @symbol"
+                                    aria-expanded="@IsIndexedSymbolOpen(category, symbol)"
+                                    @onclick="() => ToggleIndexedSymbol(category, symbol)">
+                                ▾
+                            </button>
+                            @if (IsIndexedSymbolOpen(category, symbol))
+                            {
+                                <div class="index-menu">
+                                    @foreach (var variant in IndexedVariants(symbol))
+                                    {
+                                        <button type="button"
+                                                class="index-option"
+                                                title="Insert @variant"
+                                                @onclick="() => InsertSymbol(variant)">
+                                            @variant
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <button type="button"
+                                class="symbol-button"
+                                title="Insert @symbol"
+                                @onclick="() => InsertSymbol(symbol)">
+                            @symbol
+                        </button>
+                    }
+                }
+                </div>
+            </div>
+        }
+    </section>
+
+    <section class="actions" aria-label="Formula actions">
+        <button type="button" class="primary-action" @onclick="ValidateFormula">Check</button>
+        <button type="button" @onclick="ClearFormula">Clear</button>
+        <button type="button" @onclick="CopyUnicode" disabled="@IsFormulaEmpty">Copy Unicode</button>
+        <button type="button" @onclick="CopyLatex" disabled="@string.IsNullOrWhiteSpace(LatexOutput)">Copy LaTeX</button>
+    </section>
+
+    @if (_validationResult is not null)
+    {
+        <section class="validation-result @ValidationClass" aria-live="polite">
+            <strong>@ValidationHeading</strong>
+            <span>@_validationResult.Message</span>
+            @if (_validationResult.FreeVariables.Count > 0)
+            {
+                <span>Free variables: @string.Join(", ", _validationResult.FreeVariables)</span>
+            }
+        </section>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_copyMessage))
+    {
+        <p class="copy-status" aria-live="polite">@_copyMessage</p>
+    }
+
+    <section class="output-stack" aria-label="LaTeX output">
+        <label for="latex-output">LaTeX</label>
+        <textarea id="latex-output"
+                  class="latex-output"
+                  readonly
+                  spellcheck="false"
+                  value="@LatexOutput"></textarea>
+    </section>
+
+    <p class="contribute-link">
+        <span>Contribute:</span>
+        <a href="https://github.com/quintessencequotient/LogicExporter" aria-label="Contribute to LogicExporter">GitHub</a>
+    </p>
+</main>
+
+@code {
+    private static readonly SymbolCategory[] PropositionalSymbolCategories =
+    [
+        new("Connectives", ["¬", "∧", "∨", "→", "↔"]),
+        new("Grouping", ["(", ")"]),
+        new("Sentences", ["P", "Q", "R", "F", "G", "H"])
+    ];
+
+    private static readonly SymbolCategory[] FirstOrderSymbolCategories =
+    [
+        new("Connectives", ["¬", "∧", "∨", "→", "↔"]),
+        new("Quantifiers", ["∀", "∃"]),
+        new("Identity", ["=", "≠"]),
+        new("Grouping", ["(", ")", ","]),
+        new("Predicates", ["P", "Q", "R", "F", "G", "H"], HasIndexedVariants: true),
+        new("Variables", ["x", "y", "z"], HasIndexedVariants: true),
+        new("Constants", ["a", "b", "c", "d", "e"])
+    ];
+
+    private static readonly SymbolCategory[] ModalSymbolCategories =
+    [
+        new("Connectives", ["¬", "∧", "∨", "→", "↔"]),
+        new("Modal", ["□", "◇"]),
+        new("Quantifiers", ["∀", "∃"]),
+        new("Identity", ["=", "≠"]),
+        new("Grouping", ["(", ")", ","]),
+        new("Predicates", ["P", "Q", "R", "F", "G", "H"], HasIndexedVariants: true),
+        new("Variables", ["x", "y", "z"], HasIndexedVariants: true),
+        new("Constants", ["a", "b", "c", "d", "e"])
+    ];
+
+    private static readonly int[] SymbolIndexes = [0, 1, 2, 3, 4, 5];
+
+    private ElementReference _formulaEditor;
+    private string _formula = string.Empty;
+    private string? _openIndexedSymbol;
+    private string? _copyMessage;
+    private LogicSystem _selectedSystem = LogicSystem.Propositional;
+    private FormulaValidationResult? _validationResult;
+
+    private LogicSystem SelectedSystem
+    {
+        get => _selectedSystem;
+        set
+        {
+            if (_selectedSystem == value)
+            {
+                return;
+            }
+
+            _selectedSystem = value;
+            _openIndexedSymbol = null;
+            ResetFeedback();
+        }
+    }
+
+    private IReadOnlyList<SymbolCategory> CurrentSymbolCategories => _selectedSystem switch
+    {
+        LogicSystem.FirstOrderWithIdentity => FirstOrderSymbolCategories,
+        LogicSystem.Modal => ModalSymbolCategories,
+        _ => PropositionalSymbolCategories
+    };
+
+    private string UnicodeFormula => SymbolNormalizer.Normalize(_formula);
+
+    private string LatexOutput => LatexConverter.Convert(_formula, _selectedSystem);
+
+    private bool IsFormulaEmpty => string.IsNullOrWhiteSpace(_formula);
+
+    private string ValidationClass => _validationResult?.Status switch
+    {
+        ValidationStatus.Valid => "is-valid",
+        ValidationStatus.Invalid => "is-invalid",
+        ValidationStatus.ParserPending => "is-pending",
+        _ => string.Empty
+    };
+
+    private string ValidationHeading => _validationResult?.Status switch
+    {
+        ValidationStatus.Valid => "OK",
+        ValidationStatus.Invalid => "Fail",
+        ValidationStatus.ParserPending => "Error",
+        _ => "Result"
+    };
+
+    private void UpdateFormula(ChangeEventArgs args)
+    {
+        _formula = args.Value?.ToString() ?? string.Empty;
+        ResetFeedback();
+    }
+
+    private async Task InsertSymbol(string symbol)
+    {
+        _formula = await Js.InvokeAsync<string>("logicExporter.insertAtCursor", _formulaEditor, symbol);
+        _openIndexedSymbol = null;
+        ResetFeedback();
+    }
+
+    private void ToggleIndexedSymbol(SymbolCategory category, string symbol)
+    {
+        var key = GetIndexedSymbolKey(category, symbol);
+        _openIndexedSymbol = _openIndexedSymbol == key ? null : key;
+    }
+
+    private bool IsIndexedSymbolOpen(SymbolCategory category, string symbol)
+    {
+        return _openIndexedSymbol == GetIndexedSymbolKey(category, symbol);
+    }
+
+    private static IEnumerable<string> IndexedVariants(string symbol)
+    {
+        return SymbolIndexes.Select(index => $"{symbol}_{index}");
+    }
+
+    private static string GetIndexedSymbolKey(SymbolCategory category, string symbol)
+    {
+        return $"{category.Label}:{symbol}";
+    }
+
+    private void ValidateFormula()
+    {
+        _validationResult = FormulaValidator.Validate(_formula, _selectedSystem);
+        _copyMessage = null;
+    }
+
+    private async Task CopyUnicode()
+    {
+        await CopyText(UnicodeFormula, "Copied Unicode.");
+    }
+
+    private async Task CopyLatex()
+    {
+        await CopyText(LatexOutput, "Copied LaTeX.");
+    }
+
+    private async Task CopyText(string text, string successMessage)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        var copied = await Js.InvokeAsync<bool>("logicExporter.copyText", text);
+        _copyMessage = copied ? successMessage : "Copy unavailable.";
+    }
+
+    private void ClearFormula()
+    {
+        _formula = string.Empty;
+        ResetFeedback();
+    }
+
+    private void ResetFeedback()
+    {
+        _validationResult = null;
+        _copyMessage = null;
+    }
+
+    private sealed record SymbolCategory(
+        string Label,
+        IReadOnlyList<string> Symbols,
+        bool HasIndexedVariants = false);
+}
