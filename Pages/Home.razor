@@ -1,7 +1,7 @@
 @page "/"
 @inject IJSRuntime Js
 
-<PageTitle>LogicExporter</PageTitle>
+<PageTitle>Logic Exporter</PageTitle>
 
 <main class="logic-shell">
     <header class="app-header">
@@ -231,6 +231,14 @@
         ValidationStatus.ParserPending => "Error",
         _ => "Result"
     };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Js.InvokeVoidAsync("logicExporter.trackMobileEditor", _formulaEditor);
+        }
+    }
 
     private void UpdateFormula(ChangeEventArgs args)
     {
