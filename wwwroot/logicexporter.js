@@ -122,8 +122,7 @@ window.logicExporter = {
 
         const value = element.value || "";
         const selection = getMobileInsertionSelection(element, value.length);
-        const shouldUpdateDomSelection = document.activeElement === element;
-        const { nextValue, nextPosition } = insertWithSelection(element, text, selection, shouldUpdateDomSelection);
+        const { nextValue, nextPosition } = insertWithSelection(element, text, selection, false);
 
         rememberRange(element, nextPosition, nextPosition);
         return nextValue;
