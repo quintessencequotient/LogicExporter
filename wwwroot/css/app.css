@@ -52,7 +52,6 @@ button {
 
 button:hover:not(:disabled),
 button:focus-visible,
-.help-trigger:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 a:focus-visible {
@@ -122,8 +121,7 @@ a {
     transition: background 120ms ease, color 120ms ease;
 }
 
-.help-tooltip:hover .help-trigger,
-.help-trigger:focus-visible {
+.help-tooltip:hover .help-trigger {
     background: var(--accent);
     color: #ffffff;
 }
