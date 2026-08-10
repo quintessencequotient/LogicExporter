@@ -42,4 +42,4 @@ dotnet run
 
 ## Contributing
 
-Contributions are welcome, especially from philosophers. If you want to contribute, please confine yourself to the current framework (Blazor C# with Razor pages, .NET 10), and include comments. We want to expand the parser and GUI to handle more specialized philosophical logics, especially free logic, plural logic, second-order logic, and more exotic modal logics. When implementing support for new logical systems, prefer extending the shared parser wherever possible, and please add validation tests. Note that this is a small, spare-time project; review may be slow.
+Contributions are welcome, especially from philosophers. If you want to contribute, please confine yourself to the current framework (Blazor C# with Razor pages, .NET 10), and include comments. We want to expand the parser and GUI to handle more specialized philosophical logics, especially free logic, plural logic, second-order logic, and more exotic modal logics. When implementing support for new logical systems, prefer extending the shared parser wherever possible, and please add validation tests.
